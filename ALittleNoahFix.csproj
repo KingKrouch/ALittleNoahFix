@@ -1,0 +1,71 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>ALittleNoahFix</AssemblyName>
+    <Description></Description>
+    <Version>1.0.0</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <RestoreAdditionalProjectSources>
+      https://api.nuget.org/v3/index.json;
+      https://nuget.bepinex.dev/v3/index.json
+    </RestoreAdditionalProjectSources>
+    <RootNamespace>ALittleNoahFix</RootNamespace>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BepInEx.Unity.IL2CPP" Version="6.0.0-be.664" IncludeAssets="compile" />
+    <PackageReference Include="BepInEx.PluginInfoProps" Version="2.1.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>libs\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="com.rlabrecque.steamworks.net">
+      <HintPath>libs\com.rlabrecque.steamworks.net.dll</HintPath>
+    </Reference>
+    <Reference Include="Game.Animation">
+      <HintPath>libs\Game.Animation.dll</HintPath>
+    </Reference>
+    <Reference Include="Game.Core">
+      <HintPath>libs\Game.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="Game.EditorComponents">
+      <HintPath>libs\Game.EditorComponents.dll</HintPath>
+    </Reference>
+    <Reference Include="Game.Gameplay">
+      <HintPath>libs\Game.Gameplay.dll</HintPath>
+    </Reference>
+    <Reference Include="Game.Math">
+      <HintPath>libs\Game.Math.dll</HintPath>
+    </Reference>
+    <Reference Include="Game.Rendering">
+      <HintPath>libs\Game.Rendering.dll</HintPath>
+    </Reference>
+    <Reference Include="GR">
+      <HintPath>libs\GR.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Universal.Runtime">
+      <HintPath>libs\Unity.RenderPipelines.Universal.Runtime.dll</HintPath>
+    </Reference>
+
+
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>libs\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+
+    <Reference Include="mscorlib">
+      <HintPath>libs\Il2Cppmscorlib.dll</HintPath>
+    </Reference>
+
+    <Reference Include="UnityEngine.UI">
+      <HintPath>libs\UnityEngine.UI.dll</HintPath>
+    </Reference>
+
+    <Reference Include="UnityEngine.VideoModule">
+      <HintPath>libs\UnityEngine.VideoModule.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+</Project>
