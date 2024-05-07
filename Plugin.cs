@@ -94,7 +94,7 @@ public partial class ALittleNoahFix : BasePlugin
                 Debug.LogWarning("Couldn't find a Rendering Volume.");
                 return;
             }
-            Debug.Log("Found Rendering Volume.");
+            // TODO: Figure out why this shit doesn't work.
             foreach (var component in volumeProfile.components) {
                 switch (component) {
                     case DepthOfField dof:
@@ -195,74 +195,5 @@ public partial class ALittleNoahFix : BasePlugin
                 arf.aspectRatio = Screen.currentResolution.m_Width / (float)Screen.currentResolution.m_Height;
             }
         }
-
-        //[HarmonyPatch(typeof(UIMagicBar), nameof(UIMagicBar.Init)), HarmonyPostfix]
-        //public static void AddAspectRatioFitterToMagicBar(UIMagicBar __instance)
-        //{
-            // We need to explicitly check if it exists first, as for some reason, the component can be added twice.
-            //var magicBarAspectRatioFitter = __instance.gameObject.GetComponent<AspectRatioFitter>();
-            //if (magicBarAspectRatioFitter != null) return;
-            //magicBarAspectRatioFitter = __instance.gameObject.AddComponent<AspectRatioFitter>();
-            //Debug.Log("Adding Aspect Ratio Fitter to " + __instance.gameObject.name);
-            //AdjustAspectRatioFitter(magicBarAspectRatioFitter);
-        //}
-
-        //[HarmonyPatch(typeof(UIScriptMode), "Init"), HarmonyPostfix]
-        //public static void AddAspectRatioFitterToTrialTowerDialogue(UIScriptMode __instance)
-        //{
-        //var dialogueAspectRatioFitter = __instance.gameObject.GetComponent<AspectRatioFitter>();
-        //if (dialogueAspectRatioFitter != null) return;
-        //dialogueAspectRatioFitter = __instance.gameObject.AddComponent<AspectRatioFitter>();
-        //Debug.Log("Adding Aspect Ratio Fitter to " + __instance.gameObject.name);
-        //AdjustAspectRatioFitter(dialogueAspectRatioFitter);
-
-            // Fix the Vignette effect with ultrawide resolutions.
-            //var topVignette = __instance.transform.Find("BlackEdge/EdgeUp");
-            //var bottomVignette = __instance.transform.Find("BlackEdge/EdgeBottom");
-            //var fadeOut = __instance.transform.Find("BlackScreen");
-
-            // A quick function of sorts to calculate the correct horizontal offset for fullscreen UI elements.
-            //float horizontalARDifference()
-            //{
-            //var currentAR = (float)Screen.currentResolution.m_Width / Screen.currentResolution.m_Height;
-            //var originalAR = 1920.0f / 1080.0f;
-            //if (currentAR < originalAR) return 1.0f;
-            //return currentAR / originalAR;
-            //}
-
-            // Create a cached variable of sorts, so we don't have to run the same function twice.
-            //var offset = horizontalARDifference();
-            //topVignette.transform.localScale = new Vector3(offset, 1.0f, 1.0f);
-            //bottomVignette.transform.localScale = new Vector3(offset, 1.0f, 1.0f);
-            //fadeOut.transform.localScale = new Vector3(offset, 1.0f, 1.0f);
-            //}
-
-            //[HarmonyPatch(typeof(StaffManager), nameof(StaffManager.PlayVideo)), HarmonyPostfix]
-            //public static void FixCreditsVideoScaling(StaffManager __instance)
-            //{
-            //__instance.player.aspectRatio = VideoAspectRatio.FitInside;
-            //}
-
-            //[HarmonyPatch(typeof(UIVideoPlayer), nameof(UIVideoPlayer.PlayFromBeginning))]
-            //public static void FixVideoPlayback(UIVideoPlayer __instance)
-            //{
-            //// TODO: Figure out why this code isn't working.
-            //var videoPlayerComponent = __instance.gameObject.GetComponent<VideoPlayer>();
-            //if (videoPlayerComponent != null) {
-                // By default, the game uses FitHorizontal, which while works for ultrawide, might cause problems with resolutions narrower than 16:9.
-                //videoPlayerComponent.aspectRatio = VideoAspectRatio.FitInside;
-                //}
-                //}
-
-                //[HarmonyPatch(typeof(UIOpeningMenu), nameof(UIOpeningMenu.Init))]
-                //public static void FixMainMenuVignette(UIOpeningMenu __instance)
-                //{
-            // We need to explicitly check if it exists first, as for some reason, the component can be added twice and cause slow movement.
-            //var vignetteAspectRatioFitter = __instance.gameObject.GetComponent<AspectRatioFitter>();
-            //if (vignetteAspectRatioFitter != null) return;
-            //vignetteAspectRatioFitter = __instance.gameObject.AddComponent<AspectRatioFitter>();
-            //Debug.Log("Adding Aspect Ratio Fitter to " + __instance.gameObject.name);
-            //AdjustAspectRatioFitter(vignetteAspectRatioFitter);
-            //}
     }
 }
