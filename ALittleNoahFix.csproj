@@ -23,9 +23,6 @@
     <Reference Include="Assembly-CSharp">
       <HintPath>libs\Assembly-CSharp.dll</HintPath>
     </Reference>
-    <Reference Include="com.rlabrecque.steamworks.net">
-      <HintPath>libs\com.rlabrecque.steamworks.net.dll</HintPath>
-    </Reference>
     <Reference Include="Game.Animation">
       <HintPath>libs\Game.Animation.dll</HintPath>
     </Reference>
@@ -47,8 +44,20 @@
     <Reference Include="GR">
       <HintPath>libs\GR.dll</HintPath>
     </Reference>
+    <Reference Include="Steamworks.NET">
+      <HintPath>libs\Steamworks.NET.dll</HintPath>
+    </Reference>
+    <Reference Include="Steamworks.NET.SteamManager">
+      <HintPath>libs\Steamworks.NET.SteamManager.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.Runtime">
+      <HintPath>libs\Unity.RenderPipelines.Core.Runtime.dll</HintPath>
+    </Reference>
     <Reference Include="Unity.RenderPipelines.Universal.Runtime">
       <HintPath>libs\Unity.RenderPipelines.Universal.Runtime.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>libs\UnityEngine.dll</HintPath>
     </Reference>
 
 

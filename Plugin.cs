@@ -1,46 +1,39 @@
 ﻿using System;
+using System.Linq;
 using BepInEx;
 using BepInEx.Configuration;
 using BepInEx.Logging;
 using BepInEx.Unity.IL2CPP;
 using Game;
 using Game.Core;
+using Game.Rendering;
 using HarmonyLib;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEngine.Rendering.Universal;
 using UnityEngine.Video;
-
 
 namespace ALittleNoahFix;
 
 [BepInPlugin(MyPluginInfo.PLUGIN_GUID, MyPluginInfo.PLUGIN_NAME, MyPluginInfo.PLUGIN_VERSION)]
 [BepInProcess("LittleNoah.exe")]
-public class Plugin : BasePlugin
+public partial class ALittleNoahFix : BasePlugin
 {
     private static ManualLogSource? LogSource { get; set; }
-
-    public static ConfigEntry<int> _iHorizontalResolution;
-    public static ConfigEntry<int> _iVerticalResolution;
-    public static ConfigEntry<bool> _bvSync;
-
-    private void InitConfig()
-    {
-        _bvSync = Config.Bind("Framerate", "VSync", true, "Self Explanatory. Prevents the game's framerate from going over the screen refresh rate, as that can cause screen tearing or increased energy consumption.");
-        _iHorizontalResolution = Config.Bind("Resolution", "Horizontal Resolution", Screen.currentResolution.m_Width);
-        _iVerticalResolution = Config.Bind("Resolution", "Vertical Resolution", Screen.currentResolution.height);
-    }
 
     public override void Load()
     {
         LogSource = Log;
 
         Log.LogInfo($"Plugin {MyPluginInfo.PLUGIN_GUID} is loaded!");
-
-        InitConfig();
         
+        // Initializes our configuration file, alongside loading graphics options.
+        InitConfig();
+        LoadGraphicsSettings();
+        
+        // Finally, load our patches.
         Harmony.CreateAndPatchAll(typeof(MousePatches));
-
-        //Harmony.CreateAndPatchAll(typeof(ResolutionPatches));
+        Harmony.CreateAndPatchAll(typeof(ResolutionPatches));
         Harmony.CreateAndPatchAll(typeof(UIPatches));
         Harmony.CreateAndPatchAll(typeof(GraphicsPatches));
         //Harmony.CreateAndPatchAll(typeof(SteamPatches));
@@ -56,18 +49,30 @@ public class Plugin : BasePlugin
     [HarmonyPatch]
     public class ResolutionPatches
     {
-        //[HarmonyPatch(typeof(Game.), nameof(Game.UpdateResolutionSettings)), HarmonyPrefix]
-        public static bool ForceCustomResolution()
+        
+        [HarmonyPatch(typeof(Game.TitleScene), nameof(Game.TitleScene.Start)), HarmonyPostfix]
+        //[HarmonyPatch(typeof(Game.SystemDataStatus), nameof(Game.SystemDataStatus.UpdateResolution)), HarmonyPrefix]
+        public static void ForceCustomResolution()
         {
-            Debug.Log("Resolution Value Changed");
-            Screen.SetResolution(_iHorizontalResolution.Value, _iVerticalResolution.Value, FullScreenMode.FullScreenWindow);
-            return false;
+            if (_bForceCustomResolution.Value) {
+                Screen.SetResolution(_iHorizontalResolution.Value, _iVerticalResolution.Value, Screen.fullScreenMode);
+                Debug.Log("Resolution Value Changed to: " + Screen.currentResolution.m_Width + "x" + Screen.currentResolution.m_Height + ".");
+            }
+            return;
+        }
+
+        [HarmonyPatch(typeof(OptionGamePlayMenuElementResolution), nameof(OptionGamePlayMenuElementResolution.Setup)), HarmonyPostfix]
+        public static void SetupResolutions(OptionGamePlayMenuElementResolution __instance)
+        {
+            // TODO: Override the in-game resolution options in favor of our own.
+            return;
         }
     }
 
     [HarmonyPatch]
     public class MousePatches
     {
+        // NOTE: This doesn't seem to work at the moment. If it did, that would be great, so I could see where my cursor is in UnityExplorer.
         [HarmonyPatch(typeof(WindowsPlatformService), nameof(WindowsPlatformService.SetupTransparentCursor)), HarmonyPrefix]
         public static bool NOPTransparentCursor()
         {
@@ -81,6 +86,57 @@ public class Plugin : BasePlugin
     [HarmonyPatch]
     public class GraphicsPatches
     {
+        [HarmonyPatch(typeof(Game.BattleCamera), nameof(Game.BattleCamera.UpdateCameraParam)), HarmonyPostfix]
+        public static void PatchPostProcessing(Game.BattleCamera __instance)
+        {
+            var volumeProfile = __instance.GetComponentInParent<UnityEngine.Rendering.Volume>().profile;
+            if (volumeProfile == null) {
+                Debug.LogWarning("Couldn't find a Rendering Volume.");
+                return;
+            }
+            Debug.Log("Found Rendering Volume.");
+            foreach (var component in volumeProfile.components) {
+                switch (component) {
+                    case DepthOfField dof:
+                        Debug.Log("Disabled Depth Of Field.");
+                        dof.active = _bDepthOfField.Value switch {
+                            true  => true,
+                            false => false
+                        };
+                        break;
+                    case Bloom bloom:
+                        Debug.Log("Disabled Bloom.");
+                        bloom.active = _bBloom.Value switch {
+                            true  => true,
+                            false => false
+                        };
+                        break;
+                    case ChromaticAberration ca:
+                        Debug.Log("Disabled Chromatic Aberration.");
+                        ca.active = _bChromaticAberration.Value switch {
+                            true  => ca.active,
+                            false => false
+                        };
+                        break;
+                    case LensDistortion ld:
+                        Debug.Log("Disabled Lens Distortion.");
+                        ld.active = _bLensDistortion.Value switch {
+                            true  => ld.active,
+                            false => false
+                        };
+                        ld.active = false;
+                        break;
+                    case Vignette vg:
+                        Debug.Log("Disabled Vignette.");
+                        vg.active = _bVignette.Value switch {
+                            true  => vg.active,
+                            false => false
+                        };
+                        break;
+                }
+            }
+        }
+        
         [HarmonyPatch(typeof(Engine), nameof(Engine.DelayFrame)), HarmonyPrefix]
         public static bool PatchFramerateLimiter()
         {
@@ -103,36 +159,9 @@ public class Plugin : BasePlugin
             __instance.mCamera.gateFit = Camera.GateFitMode.Overscan;
             __instance.mCamera.fieldOfView = oldFOV;
         }
-        
         // Game.MiniMap -> Parent (GameObject name: Info), this is where the minimap scale can be adjusted for lower resolutions.
         // Game.Gameplay.EventDialog can have it's positioning set lower with resolutions narrower than 16:9 to prevent clipping problems.
         // or it can have it's anchor set to the lower center of the screen, so it's consistent and less math is needed, maybe...
-        
-        //[HarmonyPatch(typeof(), nameof(Game.UpdateQualitySettings)), HarmonyPostfix]
-        public static void LoadGraphicsSettings()
-        {
-            
-            
-
-            // TODO:
-            // 1. Figure out why the texture filtering is not working correctly. Despite our patches, the textures are still blurry as fuck and has visible seams.
-            // 2. Find a way of writing to the shadow resolution variables in the UniversalRenderPipelineAsset.
-
-            QualitySettings.anisotropicFiltering = AnisotropicFiltering.ForceEnable;
-            Texture.SetGlobalAnisotropicFilteringLimits(16, 16);
-            //Texture.masterTextureLimit      = 0; // Can raise this to force lower the texture size. Goes up to 14.
-            //QualitySettings.maximumLODLevel = 0; // Can raise this to force lower the LOD settings. 3 at max if you want it to look like a blockout level prototype.
-            //QualitySettings.lodBias         = 1.0f;
-
-            // Let's adjust some of the Render Pipeline Settings during runtime.
-            //var asset = QualitySettings.renderPipeline as UniversalRenderPipelineAsset;
-
-            //if (asset == null) return;
-            //asset.renderScale = 0.25f / 100; // Test
-            //asset.msaaSampleCount = 0; // Default is 4x MSAA
-            //asset.shadowCascadeCount = 0; // Default is 4
-            //QualitySettings.renderPipeline = asset;
-        }
     }
 
     [HarmonyPatch]
@@ -143,6 +172,15 @@ public class Plugin : BasePlugin
         public static void CanvasScalerFixes(CanvasScaler __instance)
         {
             __instance.screenMatchMode = CanvasScaler.ScreenMatchMode.Expand;
+        }
+
+        [HarmonyPatch(typeof(Game.BattleMenuCompornent), nameof(Game.BattleMenuCompornent.Start)), HarmonyPostfix]
+        public static void AddAspectRatioFitterToGameUI(Game.BattleMenuCompornent __instance)
+        {
+            if (__instance.gameObject.GetComponent<AspectRatioFitter>() != null) return;
+            var arf = __instance.gameObject.AddComponent<AspectRatioFitter>();
+            if (arf == null) return;
+            AdjustAspectRatioFitter(arf);
         }
         
         private static void AdjustAspectRatioFitter(AspectRatioFitter arf)
