@@ -9,6 +9,7 @@ using Game.Core;
 using Game.Rendering;
 using HarmonyLib;
 using UnityEngine;
+using UnityEngine.Rendering;
 using UnityEngine.UI;
 using UnityEngine.Rendering.Universal;
 using UnityEngine.Video;
@@ -86,54 +87,51 @@ public partial class ALittleNoahFix : BasePlugin
     [HarmonyPatch]
     public class GraphicsPatches
     {
-        [HarmonyPatch(typeof(Game.BattleCamera), nameof(Game.BattleCamera.UpdateCameraParam)), HarmonyPostfix]
-        public static void PatchPostProcessing(Game.BattleCamera __instance)
+        [HarmonyPatch(typeof(Volume), nameof(Volume.Update))]
+        [HarmonyPostfix]
+        public static void PatchPostProcessing(ref Volume __instance)
         {
-            var volumeProfile = __instance.GetComponentInParent<UnityEngine.Rendering.Volume>().profile;
-            if (volumeProfile == null) {
-                Debug.LogWarning("Couldn't find a Rendering Volume.");
-                return;
+            if (__instance == null) return;
+            var volumeProfile = __instance.profile;
+            if (volumeProfile == null) return;
+            volumeProfile.TryGet(out DepthOfField dof);
+            if (dof) {
+                dof.active = _bDepthOfField.Value switch {
+                    true  => true,
+                    false => false
+                };
             }
-            // TODO: Figure out why this shit doesn't work.
-            foreach (var component in volumeProfile.components) {
-                switch (component) {
-                    case DepthOfField dof:
-                        Debug.Log("Disabled Depth Of Field.");
-                        dof.active = _bDepthOfField.Value switch {
-                            true  => true,
-                            false => false
-                        };
-                        break;
-                    case Bloom bloom:
-                        Debug.Log("Disabled Bloom.");
-                        bloom.active = _bBloom.Value switch {
-                            true  => true,
-                            false => false
-                        };
-                        break;
-                    case ChromaticAberration ca:
-                        Debug.Log("Disabled Chromatic Aberration.");
-                        ca.active = _bChromaticAberration.Value switch {
-                            true  => ca.active,
-                            false => false
-                        };
-                        break;
-                    case LensDistortion ld:
-                        Debug.Log("Disabled Lens Distortion.");
-                        ld.active = _bLensDistortion.Value switch {
-                            true  => ld.active,
-                            false => false
-                        };
-                        ld.active = false;
-                        break;
-                    case Vignette vg:
-                        Debug.Log("Disabled Vignette.");
-                        vg.active = _bVignette.Value switch {
-                            true  => vg.active,
-                            false => false
-                        };
-                        break;
-                }
+            
+            volumeProfile.TryGet(out Bloom bloom);
+            if (bloom) {
+                bloom.active = _bBloom.Value switch {
+                    true  => true,
+                    false => false
+                };
+            }
+            
+            volumeProfile.TryGet(out ChromaticAberration ca);
+            if (ca) {
+                ca.active = _bChromaticAberration.Value switch {
+                    true  => ca.active,
+                    false => false
+                };
+            }
+            
+            volumeProfile.TryGet(out LensDistortion ld);
+            if (ld) {
+                ld.active = _bLensDistortion.Value switch {
+                    true  => ld.active,
+                    false => false
+                };
+            }
+            
+            volumeProfile.TryGet(out Vignette vg);
+            if (vg) {
+                vg.active = _bVignette.Value switch {
+                    true  => vg.active,
+                    false => false
+                };
             }
         }
         
